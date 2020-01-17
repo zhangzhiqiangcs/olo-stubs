@@ -84,8 +84,6 @@ class BasicOLOPlugin(Plugin):
         return None
 
     def get_base_class_hook(self, fullname: str) -> 'CB[ClassDefContext]':
-        if 'test' in fullname or 'olo.' in fullname:
-            print(f'base class: {fullname}')
         sym = self.lookup_fully_qualified(fullname)
         if fullname == 'olo.model.Model' and isinstance(sym.node, TypeInfo):
             set_model(sym.node)
