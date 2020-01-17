@@ -1,0 +1,31 @@
+[case testFieldsInferred]
+from olo import Model, Field
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str)
+
+user: User
+reveal_type(user.id)  # N: Revealed type is 'builtins.int*'
+reveal_type(User.name)  # N: Revealed type is 'olo.field.Field[builtins.str]'
+[out]
+
+[case testFieldsInferredInstance]
+from olo import Model, Field
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str, noneable=True)
+
+user: User
+reveal_type(user.id)  # N: Revealed type is 'builtins.int*'
+reveal_type(User.name)  # N: Revealed type is 'olo.field.Field[Union[builtins.str, None]]'
+[out]
