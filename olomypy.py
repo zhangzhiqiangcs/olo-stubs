@@ -1,18 +1,14 @@
-from mypy.mro import calculate_mro, MroError
-from mypy.plugin import (
-    Plugin, FunctionContext, ClassDefContext, DynamicClassDefContext,
-    SemanticAnalyzerPluginInterface
-)
-from mypy.plugins.common import add_method
 from mypy.nodes import (
-    NameExpr, Expression, StrExpr, TypeInfo, ClassDef, Block, SymbolTable, SymbolTableNode, GDEF,
-    Argument, Var, ARG_STAR2, MDEF, TupleExpr, RefExpr, FuncBase, SymbolNode,
+    NameExpr, Expression, TypeInfo, Block, SymbolTableNode, Argument, Var, ARG_STAR2, MDEF, FuncBase, SymbolNode,
     FuncDef, ARG_POS, PassStmt, Decorator)
+from mypy.plugin import (
+    Plugin, FunctionContext, ClassDefContext, MethodContext)
+from mypy.plugins.common import add_method
 from mypy.semanal_shared import set_callable_name
 from mypy.types import (
-    UnionType, NoneTyp, Instance, Type, AnyType, TypeOfAny, UninhabitedType, CallableType,
+    UnionType, NoneTyp, Instance, Type, AnyType, TypeOfAny, CallableType,
     TypeVarDef, TypeType)
-from mypy.typevars import fill_typevars_with_any, fill_typevars
+from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 
 try:
@@ -28,6 +24,14 @@ if MYPY:
 
 T = TypeVar('T')
 CB = Optional[Callable[[T], None]]
+
+CHECK_REQUIRED_METHOD_NAMES = frozenset(
+    ['create']
+)
+
+ALL_METHOD_NAMES = CHECK_REQUIRED_METHOD_NAMES | {
+    'get_by', 'gets_by', 'get_multi_by', 'update'
+}
 
 FIELD_NAME = 'olo.field.Field'  # type: Final
 
@@ -80,7 +84,17 @@ class BasicOLOPlugin(Plugin):
         if sym and isinstance(sym.node, TypeInfo):
             # May be a model instantiation
             if is_model(sym.node):
-                return model_hook
+                return init_method_hook
+        return None
+
+    def get_method_hook(self, fullname: str
+                        ) -> Optional[Callable[[MethodContext], Type]]:
+        classname, _, method_name = fullname.rpartition('.')
+        cls_sym = self.lookup_fully_qualified(classname)
+        if cls_sym and isinstance(cls_sym.node, TypeInfo):
+            if is_model(cls_sym.node) and method_name in ALL_METHOD_NAMES:
+                check_required = method_name in CHECK_REQUIRED_METHOD_NAMES
+                return generate_method_hook(cls_sym.node, check_required=check_required)
         return None
 
     def get_base_class_hook(self, fullname: str) -> 'CB[ClassDefContext]':
@@ -119,13 +133,66 @@ def add_model_init_hook(ctx: ClassDefContext) -> None:
     var = Var('kwargs', any)
     kw_arg = Argument(variable=var, type_annotation=any, initializer=None, kind=ARG_STAR2)
     add_method(ctx, '__init__', [kw_arg], NoneTyp())
-    # FIXME: return bool
-    add_method(ctx, 'update', [kw_arg], NoneTyp())
-    add_class_method(ctx, 'create', [kw_arg], fill_typevars(ctx.cls.info))
     ctx.cls.info.metadata.setdefault('olo', {})['generated_init'] = True
 
 
-def model_hook(ctx: FunctionContext) -> Type:
+def generate_method_hook(model: TypeInfo, check_required: bool = False) -> Callable[[Union[FunctionContext, MethodContext]], Type]:
+    def _(ctx: Union[FunctionContext, MethodContext]) -> Type:
+        metadata = model.metadata.get('olo')
+        if not metadata or not metadata.get('generated_init'):
+            return ctx.default_return_type
+
+        # Collect column names and types defined in the model
+        # TODO: cache this?
+        all_required_names = set()
+        expected_types = {}  # type: Dict[str, Type]
+        for cls in model.mro[::-1]:
+            for name, sym in cls.names.items():
+                if isinstance(sym.node, Var):
+                    tp = get_proper_type(sym.node.type)
+                    if isinstance(tp, Instance):
+                        if fullname(tp.type) == FIELD_NAME:
+                            # assert len(tp.args) == 1
+                            expected_types[name] = tp.args[0]
+                            if len(tp.args) == 2:
+                                all_required_names.add(name)
+
+        arg_names = ctx.arg_names[0]
+        if len(ctx.arg_names) == 2:
+            arg_names = ctx.arg_names[1]
+        arg_types = ctx.arg_types[0]
+        if len(ctx.arg_types) == 2:
+            arg_types = ctx.arg_types[1]
+
+        if check_required:
+            required_names = all_required_names - set(arg_names)
+
+            if required_names:
+                ctx.api.fail('required args: {} not provided'.format(', '.join(map('`{}`'.format, required_names))),
+                             ctx.context)
+
+        for actual_name, actual_type in zip(arg_names, arg_types):
+            if actual_name is None:
+                # We can't check kwargs reliably.
+                # TODO: support TypedDict?
+                continue
+            if actual_name not in expected_types:
+                ctx.api.fail('Unexpected field "{}" for model "{}"'.format(actual_name,
+                                                                           shortname(model)),
+                             ctx.context)
+                continue
+            # Using private API to simplify life.
+            ctx.api.check_subtype(actual_type, expected_types[actual_name],  # type: ignore
+                                  ctx.context,
+                                  'Incompatible type for "{}" of "{}"'.format(actual_name,
+                                                                              shortname(model)),
+                                  'got', 'expected')
+        return ctx.default_return_type
+
+    return _
+
+
+def init_method_hook(ctx: Union[FunctionContext, MethodContext]) -> Type:
     """More precise model instantiation check.
 
     Note: sub-models are not supported.
@@ -134,41 +201,7 @@ def model_hook(ctx: FunctionContext) -> Type:
     """
     assert isinstance(ctx.default_return_type, Instance)  # type: ignore[misc]
     model = ctx.default_return_type.type
-    metadata = model.metadata.get('olo')
-    if not metadata or not metadata.get('generated_init'):
-        return ctx.default_return_type
-
-    # Collect column names and types defined in the model
-    # TODO: cache this?
-    expected_types = {}  # type: Dict[str, Type]
-    for cls in model.mro[::-1]:
-        for name, sym in cls.names.items():
-            if isinstance(sym.node, Var):
-                tp = get_proper_type(sym.node.type)
-                if isinstance(tp, Instance):
-                    if fullname(tp.type) == FIELD_NAME:
-                        assert len(tp.args) == 1
-                        expected_types[name] = tp.args[0]
-
-    assert len(ctx.arg_names) == 1  # only **kwargs in generated __init__
-    assert len(ctx.arg_types) == 1
-    for actual_name, actual_type in zip(ctx.arg_names[0], ctx.arg_types[0]):
-        if actual_name is None:
-            # We can't check kwargs reliably.
-            # TODO: support TypedDict?
-            continue
-        if actual_name not in expected_types:
-            ctx.api.fail('Unexpected field "{}" for model "{}"'.format(actual_name,
-                                                                       shortname(model)),
-                         ctx.context)
-            continue
-        # Using private API to simplify life.
-        ctx.api.check_subtype(actual_type, expected_types[actual_name],  # type: ignore
-                              ctx.context,
-                              'Incompatible type for "{}" of "{}"'.format(actual_name,
-                                                                          shortname(model)),
-                              'got', 'expected')
-    return ctx.default_return_type
+    return generate_method_hook(model, check_required=True)(ctx)
 
 
 def get_argument_by_name(ctx: FunctionContext, name: str) -> Optional[Expression]:
@@ -214,6 +247,7 @@ def field_hook(ctx: FunctionContext) -> Type:
 
     noneable_arg = get_argument_by_name(ctx, 'noneable')
     primary_arg = get_argument_by_name(ctx, 'primary_key')
+    default_arg = get_argument_by_name(ctx, 'default')
 
     if noneable_arg:
         noneable = parse_bool(noneable_arg)
@@ -225,10 +259,15 @@ def field_hook(ctx: FunctionContext) -> Type:
     # TODO: Add support for literal types.
 
     if not noneable:
+        if not default_arg:
+            ctx.default_return_type.args.append(AnyType(1))
         return ctx.default_return_type
     assert len(ctx.default_return_type.args) == 1
     arg_type = ctx.default_return_type.args[0]
-    return Instance(ctx.default_return_type.type, [UnionType([arg_type, NoneTyp()])],
+    args: List[Type] = [UnionType([arg_type, NoneTyp()])]
+    if not noneable and not default_arg:
+        args.append(AnyType(1))
+    return Instance(ctx.default_return_type.type, args,
                     line=ctx.default_return_type.line,
                     column=ctx.default_return_type.column)
 
