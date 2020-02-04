@@ -49,3 +49,72 @@ User(foo='yetone') # E: Required args: `name`, `age` not provided
 User(name='yetone', age=12, foo='yetone') # N:
 User.create(name='yetone', age=12, foo='yetone') # N:
 [out]
+
+[case testModelGet]
+from olo import Model, Field
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True, auto_increment=True)
+    name = Field(str)
+    age = Field(int)
+    foo = Field(str)
+
+user = User.get(1)
+reveal_type(user)  # N: Revealed type is 'Union[main.User*, None]'
+[out]
+
+[case testModelGetBy]
+from olo import Model, Field
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True, auto_increment=True)
+    name = Field(str)
+    age = Field(int)
+    foo = Field(str)
+
+user = User.get_by(name='yetone')
+reveal_type(user)  # N: Revealed type is 'Union[main.User*, None]'
+user0 = User.get_by(name=1) # E: Incompatible type for "name" of "User" (got "int", expected "str")
+[out]
+
+[case testModelGetsBy]
+from olo import Model, Field
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True, auto_increment=True)
+    name = Field(str)
+    age = Field(int)
+    foo = Field(str)
+
+users = User.gets_by(name='yetone')
+reveal_type(users)  # N: Revealed type is 'builtins.list[main.User*]'
+[out]
+
+[case testModelGets]
+from olo import Model, Field
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True, auto_increment=True)
+    name = Field(str)
+    age = Field(int)
+    foo = Field(str)
+
+users = User.gets([1, 2])
+reveal_type(users)  # N: Revealed type is 'builtins.list[Union[main.User, None]]'
+[out]

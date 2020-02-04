@@ -22,7 +22,7 @@ test_data_prefix = os.path.join(prefix, 'test', 'test-data')
 
 
 class SQLDataSuite(DataSuite):
-    files = ['olo-basics.test',]
+    files = ['olo-basics.test', 'olo-query.test']
     data_prefix = test_data_prefix
 
     def run_case(self, testcase: DataDrivenTestCase) -> None:

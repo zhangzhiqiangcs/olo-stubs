@@ -1,4 +1,4 @@
-from typing import TypeVar, Type, Any, Optional, List, ClassVar
+from typing import TypeVar, Type, Any, Optional, List, ClassVar, overload
 
 from .expression import BinaryExpression
 from .query import Query
@@ -23,9 +23,10 @@ class Model(metaclass=ModelMeta):
     def get(cls: Type[M], ident: Any, *kwargs: Any) -> Optional[M]: ...
 
     @classmethod
-    def get_multi(cls: Type[M], idents: List[T], filter_none: bool = True) -> Optional[M]: ...
+    def get_multi(cls: Type[M], idents: List[T], filter_none: bool = False) -> List[Optional[M]]: ...
 
-    gets = get_multi
+    @classmethod
+    def gets(cls: Type[M], idents: List[T], filter_none: bool = False) -> List[Optional[M]]: ...
 
     @classmethod
     def get_by(cls: Type[M], *expressions: BinaryExpression, **expression_dict: Any) -> Optional[M]: ...
@@ -33,7 +34,8 @@ class Model(metaclass=ModelMeta):
     @classmethod
     def get_multi_by(cls: Type[M], *expressions: BinaryExpression, **expression_dict: Any) -> List[M]: ...
 
-    gets_by = get_multi_by
+    @classmethod
+    def gets_by(cls: Type[M], *expressions: BinaryExpression, **expression_dict: Any) -> List[M]: ...
 
     @classmethod
     def create(cls: Type[M], **kwargs: Any) -> M: ...
