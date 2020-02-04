@@ -33,7 +33,7 @@ ALL_METHOD_NAMES = CHECK_REQUIRED_METHOD_NAMES | {
     'get_by', 'gets_by', 'get_multi_by', 'update'
 }
 
-FIELD_NAME = 'olo.field.Field'  # type: Final
+FIELD_NAME = 'olo.field.Field'  # type: Final[str]
 
 
 # See https://github.com/python/mypy/issues/6617 for plugin API updates.
@@ -87,8 +87,7 @@ class BasicOLOPlugin(Plugin):
                 return init_method_hook
         return None
 
-    def get_method_hook(self, fullname: str
-                        ) -> Optional[Callable[[MethodContext], Type]]:
+    def get_method_hook(self, fullname: str) -> Optional[Callable[[MethodContext], Type]]:
         classname, _, method_name = fullname.rpartition('.')
         cls_sym = self.lookup_fully_qualified(classname)
         if cls_sym and isinstance(cls_sym.node, TypeInfo):
@@ -144,18 +143,21 @@ def generate_method_hook(model: TypeInfo, check_required: bool = False) -> Calla
 
         # Collect column names and types defined in the model
         # TODO: cache this?
-        all_required_names = set()
+        all_required_names = []
         expected_types = {}  # type: Dict[str, Type]
         for cls in model.mro[::-1]:
             for name, sym in cls.names.items():
-                if isinstance(sym.node, Var):
-                    tp = get_proper_type(sym.node.type)
-                    if isinstance(tp, Instance):
-                        if fullname(tp.type) == FIELD_NAME:
-                            # assert len(tp.args) == 1
-                            expected_types[name] = tp.args[0]
-                            if len(tp.args) == 2:
-                                all_required_names.add(name)
+                if not isinstance(sym.node, Var):
+                    continue
+                tp = get_proper_type(sym.node.type)
+                if not isinstance(tp, Instance):
+                    continue
+                if fullname(tp.type) != FIELD_NAME:
+                    continue
+                # assert len(tp.args) == 1
+                expected_types[name] = tp.args[0]
+                if is_required_field(tp):
+                    all_required_names.append(name)
 
         arg_names = ctx.arg_names[0]
         if len(ctx.arg_names) == 2:
@@ -165,10 +167,11 @@ def generate_method_hook(model: TypeInfo, check_required: bool = False) -> Calla
             arg_types = ctx.arg_types[1]
 
         if check_required:
-            required_names = all_required_names - set(arg_names)
+            arg_names_set = set(arg_names)
+            required_names = [n for n in all_required_names if n not in arg_names_set]
 
             if required_names:
-                ctx.api.fail('required args: {} not provided'.format(', '.join(map('`{}`'.format, required_names))),
+                ctx.api.fail('Required args: {} not provided'.format(', '.join(map('`{}`'.format, required_names))),
                              ctx.context)
 
         for actual_name, actual_type in zip(arg_names, arg_types):
@@ -248,28 +251,42 @@ def field_hook(ctx: FunctionContext) -> Type:
     noneable_arg = get_argument_by_name(ctx, 'noneable')
     primary_arg = get_argument_by_name(ctx, 'primary_key')
     default_arg = get_argument_by_name(ctx, 'default')
+    auto_increment_arg = get_argument_by_name(ctx, 'auto_increment')
 
-    if noneable_arg:
-        noneable = parse_bool(noneable_arg)
+    auto_increment = False
+    if auto_increment_arg:
+        auto_increment = parse_bool(auto_increment_arg)
+
+    if primary_arg:
+        noneable = not parse_bool(primary_arg)
     else:
-        if primary_arg:
-            noneable = not parse_bool(primary_arg)
+        if noneable_arg:
+            noneable = parse_bool(noneable_arg)
         else:
             noneable = False
     # TODO: Add support for literal types.
 
     if not noneable:
-        if not default_arg:
-            ctx.default_return_type.args.append(AnyType(1))
+        if auto_increment or default_arg:
+            set_not_required_field(ctx.default_return_type)
         return ctx.default_return_type
     assert len(ctx.default_return_type.args) == 1
     arg_type = ctx.default_return_type.args[0]
     args: List[Type] = [UnionType([arg_type, NoneTyp()])]
-    if not noneable and not default_arg:
-        args.append(AnyType(1))
-    return Instance(ctx.default_return_type.type, args,
-                    line=ctx.default_return_type.line,
-                    column=ctx.default_return_type.column)
+    f = Instance(ctx.default_return_type.type, args,
+                 line=ctx.default_return_type.line,
+                 column=ctx.default_return_type.column)
+    if auto_increment or noneable or default_arg:
+        set_not_required_field(f)
+    return f
+
+
+def set_not_required_field(f: Type) -> None:
+    f.args.append(AnyType(1))
+
+
+def is_required_field(f: Type) -> bool:
+    return len(f.args) == 1
 
 
 # We really need to add this to TypeChecker API

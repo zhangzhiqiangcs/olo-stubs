@@ -27,5 +27,25 @@ class User(BaseModel):
 
 user: User
 reveal_type(user.id)  # N: Revealed type is 'builtins.int*'
-reveal_type(User.name)  # N: Revealed type is 'olo.field.Field[Union[builtins.str, None]]'
+reveal_type(user.name)  # N: Revealed type is 'Union[builtins.str*, None]'
+reveal_type(User.name)  # N: Revealed type is 'olo.field.Field[Union[builtins.str, None], Any]'
+[out]
+
+[case testModelCreate]
+from olo import Model, Field
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True, auto_increment=True)
+    name = Field(str)
+    age = Field(int)
+    foo = Field(str)
+
+User.create(name='yetone') # E: Required args: `age`, `foo` not provided
+User(foo='yetone') # E: Required args: `name`, `age` not provided
+User(name='yetone', age=12, foo='yetone') # N:
+User.create(name='yetone', age=12, foo='yetone') # N:
 [out]
