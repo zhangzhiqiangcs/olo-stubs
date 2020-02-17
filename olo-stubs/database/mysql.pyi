@@ -1,9 +1,11 @@
 from typing import Any, Callable
 
 from olo.database import BaseDataBase
+from olo.libs.pool import Pool
 
 
 class MySQLDataBase(BaseDataBase):
+    pool: Pool
 
     def __init__(self, host: str, port: int, user: str, password: str, dbname: str,
                  charset: str = ...,
