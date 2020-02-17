@@ -11,6 +11,9 @@ FN = TypeVar('FN', bound='Function')
 
 class Function(SQLASTInterface[T], Generic[T]):
     @overload
+    def __init__(self, *args: Function[T], **kwargs) -> None: ...
+
+    @overload
     def __init__(self, *args: Field[T], **kwargs) -> None: ...
 
     @overload
