@@ -9,6 +9,10 @@ class BaseDataBase:
 
     def transaction(self) -> Transaction: ...
 
+    def create_all(self) -> None: ...
+
+    def execute(self, sql: str, params: Any = ...): ...
+
 
 class DataBase(BaseDataBase):
     def __init__(self, store: Any, beansdb: Any = ..., autocommit: bool = ...,
