@@ -1,10 +1,12 @@
-from typing import TypeVar, Container, Generic, Tuple
+from typing import TypeVar, Container, Generic, Tuple, Union
 
 from olo.expression import UnaryExpression, BinaryExpression
+from olo.query import Query
 
 T = TypeVar('T')
 F = TypeVar('F', bound='BinaryOperationMixin')
 F0 = TypeVar('F0', bound='UnaryOperationMixin')
+C = Union[Query[T], Container[T]]
 
 
 class UnaryOperationMixin:
@@ -14,9 +16,9 @@ class UnaryOperationMixin:
 
 class BinaryOperationMixin(Generic[T]):
 
-    def in_(self: F, other: Container[T]) -> BinaryExpression[F, Container[T]]: ...
+    def in_(self: F, other: C[T]) -> BinaryExpression[F, Container[T]]: ...
 
-    def not_in_(self: F, other: Container[T]) -> BinaryExpression[F, Container[T]]: ...
+    def not_in_(self: F, other: C[T]) -> BinaryExpression[F, Container[T]]: ...
 
     def like_(self: F, other: str) -> BinaryExpression[F, str]: ...
 
