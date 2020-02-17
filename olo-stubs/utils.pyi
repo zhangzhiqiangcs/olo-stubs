@@ -1,0 +1,9 @@
+def camel2underscore(name: str) -> str: ...
+
+
+def to_camel_case(snake_str: str) -> str: ...
+
+
+class Missing: ...
+
+missing: Missing
