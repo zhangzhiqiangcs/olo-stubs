@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TypeVar, Type, Generic, Optional, Callable, Container, Any, overload, Tuple
 
-from .expression import BinaryExpression
+from .expression import BinaryExpression, UnaryExpression
 from .interfaces import SQLASTInterface
 from .olo_types import SQLValue as SQLValue
 
@@ -95,6 +95,10 @@ class BaseField(SQLASTInterface[T], Generic[T]):
     def __lt__(self: F, other: T) -> BinaryExpression[F, T]: ... # type: ignore[override]
     def __le__(self: F, other: T) -> BinaryExpression[F, T]: ... # type: ignore[override]
     def __lshift__(self: F, other: T) -> BinaryExpression[F, T]: ...
+
+    def asc(self: F) -> UnaryExpression[F]: ...
+
+    def desc(self: F) -> UnaryExpression[F]: ...
 
 
 class Field(BaseField[T]): ...
