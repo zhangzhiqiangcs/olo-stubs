@@ -46,6 +46,8 @@ r = select((u.name, u.id) for u in User if u.name == 'yetone').all()
 reveal_type(r)  # N: Revealed type is 'List[Tuple[builtins.str, builtins.int]]'
 r0 = select((u.name, funcs.COUNT(funcs.DISTINCT(u.id))) for u in User if u.name == 'yetone').all()
 reveal_type(r0)  # N: Revealed type is 'List[Tuple[builtins.str, builtins.int]]'
-r0 = select((u.name, funcs.COUNT(funcs.DISTINCT(u.id)) + 1) for u in User if u.name == 'yetone').all()
-reveal_type(r0)  # N: Revealed type is 'List[Tuple[builtins.str, builtins.int]]'
+r1 = select((u.name, funcs.COUNT(funcs.DISTINCT(u.id)) + 1) for u in User if u.name == 'yetone').all()
+reveal_type(r1)  # N: Revealed type is 'List[Tuple[builtins.str, builtins.int]]'
+r2 = select((u.name, funcs.LENGTH(u.name) + 1) for u in User if u.name == 'yetone').all()
+reveal_type(r2)  # N: Revealed type is 'List[Tuple[builtins.str, builtins.int]]'
 [out]

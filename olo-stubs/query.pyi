@@ -17,6 +17,7 @@ F = Union[
     Field[T],
     Function[T],
     BinaryExpression[Field[T], T],
+    BinaryExpression[Function[T], T],
     BinaryExpression[PartialIf[T], T],
 ]
 M = TypeVar('M', bound=Model)

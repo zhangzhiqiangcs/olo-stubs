@@ -51,6 +51,8 @@ r1 = User.query(User.name, funcs.COUNT(User.age)).filter(name='yetone').all()
 reveal_type(r1)  # N: Revealed type is 'builtins.list[Tuple[builtins.str, builtins.int]]'
 r2 = User.query(User.name, funcs.COUNT(User.age) + 1).filter(name='yetone').all()
 reveal_type(r2)  # N: Revealed type is 'builtins.list[Tuple[builtins.str, builtins.int]]'
+r3 = User.query(User.name, funcs.LENGTH(User.name) + 1).filter(name='yetone').all()
+reveal_type(r3)  # N: Revealed type is 'builtins.list[Tuple[builtins.str, builtins.int]]'
 [out]
 
 [case testQueryIter]
