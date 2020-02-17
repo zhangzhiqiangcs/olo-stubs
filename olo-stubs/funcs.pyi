@@ -3,13 +3,14 @@ from typing import TypeVar, overload, Generic, Union
 from olo.expression import BinaryExpression
 from olo.field import Field
 from olo.interfaces import SQLASTInterface
+from olo.operations import BinaryOperationMixin
 
 T = TypeVar('T')
 U = TypeVar('U')
 FN = TypeVar('FN', bound='Function')
 
 
-class Function(SQLASTInterface[T], Generic[T]):
+class Function(SQLASTInterface[T], BinaryOperationMixin[T], Generic[T]):
     @overload
     def __init__(self, *args: Function[T], **kwargs) -> None: ...
 
@@ -36,7 +37,8 @@ class MAX(Function[T], Generic[T]): ...
 
 class MIN(Function[T], Generic[T]): ...
 
-class LENGTH(Function[int]): ...
+class LENGTH(Function[int]):
+    def __init__(self, *args: Union[Field[str], str], **kwargs) -> None: ...
 
 class PartialIf(Function[T], Generic[T]):
     @overload

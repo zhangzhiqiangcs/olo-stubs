@@ -1,8 +1,6 @@
 from typing import Generator, TypeVar, overload, Union, Tuple
 
-from olo.field import Field
-from olo.funcs import Function
-from olo.query import Query
+from olo.query import Query, F
 
 T = TypeVar('T')
 T0 = TypeVar('T0')
@@ -10,8 +8,6 @@ T1 = TypeVar('T1')
 T2 = TypeVar('T2')
 
 U = TypeVar('U')
-
-F = Union[Field[T], Function[T]]
 
 TU2 = Union[
     Tuple[T, F[T0]],

@@ -30,3 +30,22 @@ class User(BaseModel):
 users = select(u for u in User if u.name == 'yetone').all()
 reveal_type(users)  # N: Revealed type is 'List[main.User*]'
 [out]
+
+[case testSelectEntities]
+from olo import Model, Field, select, funcs
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str)
+
+r = select((u.name, u.id) for u in User if u.name == 'yetone').all()
+reveal_type(r)  # N: Revealed type is 'List[Tuple[builtins.str, builtins.int]]'
+r0 = select((u.name, funcs.COUNT(funcs.DISTINCT(u.id))) for u in User if u.name == 'yetone').all()
+reveal_type(r0)  # N: Revealed type is 'List[Tuple[builtins.str, builtins.int]]'
+r0 = select((u.name, funcs.COUNT(funcs.DISTINCT(u.id)) + 1) for u in User if u.name == 'yetone').all()
+reveal_type(r0)  # N: Revealed type is 'List[Tuple[builtins.str, builtins.int]]'
+[out]

@@ -2,7 +2,7 @@ from typing import TypeVar, Generic, Any, overload, List, Tuple, Optional, Gener
 
 from .expression import BinaryExpression, UnaryExpression
 from .field import Field
-from .funcs import Function
+from .funcs import Function, COUNT, SUM, AVG, LENGTH, MAX, MIN, PartialIf
 from .model import Model
 
 T = TypeVar('T')
@@ -13,7 +13,18 @@ T3 = TypeVar('T3')
 T4 = TypeVar('T4')
 T5 = TypeVar('T5')
 T6 = TypeVar('T6')
-F = Union[Field[T], Function[T]]
+F = Union[
+    Field[T],
+    Function[T],
+    BinaryExpression[Field[T], T],
+    BinaryExpression[COUNT[T], T],
+    BinaryExpression[SUM[T], T],
+    BinaryExpression[AVG[T], T],
+    BinaryExpression[LENGTH, T],
+    BinaryExpression[MAX[T], T],
+    BinaryExpression[MIN[T], T],
+    BinaryExpression[PartialIf[T], T],
+]
 M = TypeVar('M', bound=Model)
 Q = TypeVar('Q', bound='Query')
 

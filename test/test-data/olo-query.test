@@ -32,7 +32,7 @@ reveal_type(users)  # N: Revealed type is 'builtins.list[main.User*]'
 [out]
 
 [case testQueryEntities]
-from olo import Model, Field
+from olo import Model, Field, funcs
 
 class BaseModel(Model):
     pass
@@ -45,6 +45,12 @@ class User(BaseModel):
 
 r = User.query(User.name, User.age).filter(name='yetone').all()
 reveal_type(r)  # N: Revealed type is 'builtins.list[Tuple[builtins.str, builtins.int]]'
+r0 = User.query(User.name, funcs.SUM(User.age)).filter(name='yetone').all()
+reveal_type(r0)  # N: Revealed type is 'builtins.list[Tuple[builtins.str, builtins.int]]'
+r1 = User.query(User.name, funcs.COUNT(User.age)).filter(name='yetone').all()
+reveal_type(r1)  # N: Revealed type is 'builtins.list[Tuple[builtins.str, builtins.int]]'
+r2 = User.query(User.name, funcs.COUNT(User.age) + 1).filter(name='yetone').all()
+reveal_type(r2)  # N: Revealed type is 'builtins.list[Tuple[builtins.str, builtins.int]]'
 [out]
 
 [case testQueryIter]
