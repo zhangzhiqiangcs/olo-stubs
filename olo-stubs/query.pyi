@@ -17,12 +17,6 @@ F = Union[
     Field[T],
     Function[T],
     BinaryExpression[Field[T], T],
-    BinaryExpression[COUNT[T], T],
-    BinaryExpression[SUM[T], T],
-    BinaryExpression[AVG[T], T],
-    BinaryExpression[LENGTH, T],
-    BinaryExpression[MAX[T], T],
-    BinaryExpression[MIN[T], T],
     BinaryExpression[PartialIf[T], T],
 ]
 M = TypeVar('M', bound=Model)

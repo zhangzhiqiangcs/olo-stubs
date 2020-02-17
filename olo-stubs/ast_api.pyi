@@ -42,18 +42,6 @@ TU4 = Union[
 ]
 
 @overload
-def select(g: Generator[TU4[T, T0, T1, T2], U, U]) -> Query[Tuple[T, T0, T1, T2]]: ...
-
-@overload
-def select(g: Generator[TU3[T, T0, T1], U, U]) -> Query[Tuple[T, T0, T1]]: ...
-
-@overload
-def select(g: Generator[TU2[T, T0], U, U]) -> Query[Tuple[T, T0]]: ...
-
-@overload
-def select(g: Generator[Tuple[F[T]], U, U]) -> Query[T]: ...
-
-@overload
 def select(g: Generator[F[T], U, U]) -> Query[T]: ...
 
 @overload
