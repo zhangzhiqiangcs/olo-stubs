@@ -1,15 +1,18 @@
-from typing import TypeVar, Type, Any, Optional, List, ClassVar, overload
+from typing import TypeVar, Type, Any, Optional, List, ClassVar, Generator
 
 from .expression import BinaryExpression
 from .query import Query
 
 T = TypeVar('T')
+U = TypeVar('U')
 M = TypeVar('M', bound='Model')
 
 
 class ModelMeta(type):
     @property
     def query(cls: Type[T]) -> Query[T]: ...
+
+    def __iter__(cls: Type[T]) -> Generator[T, U, U]: ...
 
 
 class Model(metaclass=ModelMeta):

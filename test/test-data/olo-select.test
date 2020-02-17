@@ -1,0 +1,32 @@
+[case testSelect]
+from olo import Model, Field, select
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str)
+
+user = select(u for u in User if u.name == 'yetone').first()
+reveal_type(user)  # N: Revealed type is 'Union[main.User*, None]'
+if user:
+    reveal_type(user.id) # N: Revealed type is 'builtins.int*'
+    reveal_type(user.name) # N: Revealed type is 'builtins.str*'
+[out]
+
+[case testSelectList]
+from olo import Model, Field, select
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str)
+
+users = select(u for u in User if u.name == 'yetone').all()
+reveal_type(users)  # N: Revealed type is 'List[main.User*]'
+[out]
