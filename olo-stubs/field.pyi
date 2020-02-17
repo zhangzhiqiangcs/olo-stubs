@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TypeVar, Type, Generic, Optional, Callable, Container, Any, overload
 
+from .expression import BinaryExpression
 from .olo_types import SQLValue as SQLValue
 
 T = TypeVar('T')
@@ -59,6 +60,10 @@ class BaseField(Generic[T]):
 
     @overload
     def __get__(self, instance: object, owner: Any) -> T: ...
+
+    def in_(self: F, other: T) -> BinaryExpression[F, T]: ...
+
+    def not_in_(self: F, other: T) -> BinaryExpression[F, T]: ...
 
 
 class Field(BaseField[T]): ...
