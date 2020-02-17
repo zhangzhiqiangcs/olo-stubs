@@ -46,3 +46,23 @@ class User(BaseModel):
 r = User.query(User.name, User.age).filter(name='yetone').all()
 reveal_type(r)  # N: Revealed type is 'builtins.list[Tuple[builtins.str, builtins.int]]'
 [out]
+
+[case testQueryIter]
+from olo import Model, Field
+
+class BaseModel(Model):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str)
+    age = Field(int)
+
+q = User.query.filter(name='yetone')
+for u in q:
+    reveal_type(u)  # N: Revealed type is 'main.User*'
+q0 = User.query(User.name, User.age).filter(name='yetone')
+for u0 in q0:
+    reveal_type(u0)  # N: Revealed type is 'Tuple[builtins.str, builtins.int]'
+[out]
