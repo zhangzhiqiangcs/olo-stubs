@@ -4,13 +4,13 @@ from typing import TypeVar, Type, Generic, Optional, Callable, Container, Any, o
 
 from .interfaces import SQLASTInterface
 from .olo_types import SQLValue as SQLValue
-from .operations import BinaryOperationMixin, UnaryOperationMixin
+from .mixins.operations import BinaryOperationMixin, UnaryOperationMixin
 
 T = TypeVar('T')
 F = TypeVar('F', bound='BaseField')
 
 
-class BaseField(SQLASTInterface[T], UnaryOperationMixin, BinaryOperationMixin[T], Generic[T]):
+class BaseField(Generic[T]):
     type: Type[T]
     default: Optional[T]
     name: str
@@ -64,4 +64,13 @@ class BaseField(SQLASTInterface[T], UnaryOperationMixin, BinaryOperationMixin[T]
     def __get__(self, instance: object, owner: Any) -> T: ...
 
 
-class Field(BaseField[T]): ...
+class Field(BaseField[T], UnaryOperationMixin, BinaryOperationMixin[T], SQLASTInterface[T], Generic[T]): ...
+
+
+class ConstField(Field): ...
+
+
+class UnionField(BaseField, UnaryOperationMixin, BinaryOperationMixin, SQLASTInterface): ...
+
+
+class DbField(BaseField): ...

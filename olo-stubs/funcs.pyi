@@ -1,9 +1,9 @@
-from typing import TypeVar, overload, Generic, Union, Sequence
+from typing import TypeVar, overload, Generic, Union
 
 from olo.expression import BinaryExpression
 from olo.field import Field
 from olo.interfaces import SQLASTInterface
-from olo.operations import BinaryOperationMixin
+from olo.mixins.operations import BinaryOperationMixin
 
 T = TypeVar('T')
 U = TypeVar('U')
