@@ -2,7 +2,7 @@ from typing import TypeVar, Generic, Any, overload, List, Tuple, Optional, Gener
 
 from .expression import BinaryExpression, UnaryExpression
 from .field import Field
-from .funcs import Function, COUNT, SUM, AVG, LENGTH, MAX, MIN, PartialIf
+from .funcs import Function, PartialIf
 from .model import Model
 
 T = TypeVar('T')
