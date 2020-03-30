@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeVar, Type, Generic, Optional, Callable, Container, Any, overload
+from typing import TypeVar, Type, Generic, Optional, Callable, Container, Any, overload, Tuple
 
 from .interfaces import SQLASTInterface
 from .olo_types import SQLValue as SQLValue
@@ -67,10 +67,22 @@ class BaseField(Generic[T]):
 class Field(BaseField[T], UnaryOperationMixin, BinaryOperationMixin[T], SQLASTInterface[T], Generic[T]): ...
 
 
-class ConstField(Field): ...
+class ConstField(Field, Generic[T]):
+    value: T
+
+    def __init__(self, value: T) -> None: ...
+
+    @overload
+    def __get__(self: F, instance: None, owner: Any) -> F: ...
+
+    @overload
+    def __get__(self, instance: object, owner: Any) -> T: ...
 
 
-class UnionField(BaseField, UnaryOperationMixin, BinaryOperationMixin, SQLASTInterface): ...
+class UnionField(BaseField, UnaryOperationMixin, BinaryOperationMixin, SQLASTInterface, Generic[F]):
+    fields: Tuple[F]
+
+    def __init__(self, *fields: F) -> None: ...
 
 
 class DbField(BaseField): ...
