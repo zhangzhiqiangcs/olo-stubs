@@ -5,6 +5,7 @@ from typing import TypeVar, Type, Generic, Optional, Callable, Container, Any, o
 from .interfaces import SQLASTInterface
 from .olo_types import SQLValue as SQLValue
 from .mixins.operations import BinaryOperationMixin, UnaryOperationMixin
+from .types.json import JSONLike
 
 T = TypeVar('T')
 F = TypeVar('F', bound='BaseField')
@@ -67,7 +68,7 @@ class BaseField(Generic[T]):
 class Field(BaseField[T], UnaryOperationMixin, BinaryOperationMixin[T], SQLASTInterface[T], Generic[T]): ...
 
 
-class ConstField(Field, Generic[T]):
+class ConstField(Field[T], Generic[T]):
     value: T
 
     def __init__(self, value: T) -> None: ...
@@ -83,6 +84,26 @@ class UnionField(BaseField, UnaryOperationMixin, BinaryOperationMixin, SQLASTInt
     fields: Tuple[F]
 
     def __init__(self, *fields: F) -> None: ...
+
+
+class JSONField(Field[JSONLike]):
+    def __init__(self,
+                 default: Optional[JSONLike] = ...,
+                 name: Optional[str] = ...,
+                 parser: Optional[Callable[..., JSONLike]] = ...,
+                 deparser: Optional[Callable[[JSONLike], SQLValue]] = ...,
+                 primary_key: bool = ...,
+                 on_update: Optional[Callable[..., JSONLike]] = ...,
+                 choices: Optional[Container[JSONLike]] = ...,
+                 encrypt: bool = ...,
+                 input: Optional[Callable[[JSONLike], JSONLike]] = ...,
+                 output: Optional[Callable[[JSONLike], JSONLike]] = ...,
+                 noneable: bool = ...,
+                 attr_name: Optional[str] = ...,
+                 version: Optional[str] = ...,
+                 length: Optional[int] = ...,
+                 auto_increment: bool = ...,
+                 charset: Optional[str] = ...) -> None: ...
 
 
 class DbField(BaseField): ...
