@@ -81,9 +81,9 @@ class ConstField(Field[T], Generic[T]):
 
 
 class UnionField(BaseField, UnaryOperationMixin, BinaryOperationMixin, SQLASTInterface, Generic[F]):
-    fields: Tuple[F]
+    fields: Tuple[Type[Field]]
 
-    def __init__(self, *fields: F) -> None: ...
+    def __init__(self, *fields: Type[Field]) -> None: ...
 
 
 class JSONField(Field[JSONLike]):
