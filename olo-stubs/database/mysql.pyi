@@ -12,4 +12,5 @@ class MySQLDataBase(BaseDataBase):
                  beansdb: Any = ..., autocommit: bool = ...,
                  report: Callable[..., None] = ...,
                  max_active_size: int = ...,
-                 max_idle_size: int = ...) -> None: ...
+                 max_idle_size: int = ...,
+                 conn_timeout: int = ...) -> None: ...
