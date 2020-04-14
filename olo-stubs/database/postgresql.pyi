@@ -11,6 +11,7 @@ class PostgreSQLDataBase(BaseDataBase):
                  charset: str = ...,
                  beansdb: Any = ..., autocommit: bool = ...,
                  report: Callable[..., None] = ...,
-                 max_active_size: int = ...,
-                 max_idle_size: int = ...,
-                 conn_timeout: int = ...) -> None: ...
+                 pool_size: int = ...,
+                 pool_timeout: int = ...,
+                 pool_recycle: int = ...,
+                 pool_max_overflow: int = ...) -> None: ...
