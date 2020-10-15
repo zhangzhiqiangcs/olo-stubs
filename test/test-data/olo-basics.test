@@ -31,6 +31,68 @@ reveal_type(user.name)  # N: Revealed type is 'Union[builtins.str*, None]'
 reveal_type(User.name)  # N: Revealed type is 'olo.field.Field[Union[builtins.str, None], Any]'
 [out]
 
+[case testBatchField]
+from olo import Model, Field, BatchField
+
+class BaseModel(Model):
+    pass
+
+class Person(BaseModel):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str, noneable=True)
+    person = BatchField(Person)
+    user = BatchField(lambda: User)
+
+user: User
+reveal_type(user.person)  # N: Revealed type is 'Union[main.Person*, None]'
+reveal_type(user.user)  # N: Revealed type is 'Union[main.User*, None]'
+[out]
+
+[case testBatchFieldWithInvalidGetter]
+from olo import Model, Field, BatchField
+
+class BaseModel(Model):
+    pass
+
+class Person(BaseModel):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str, noneable=True)
+    person = BatchField(Person)
+
+    @person.getter # E: Argument 1 to "getter" of "BatchField" has incompatible type "Callable[[User, Any], Any]"; expected "Callable[[Type[Any], List[Any]], List[Optional[Person]]]"
+    def get_persons(cls, users):
+        return None
+[out]
+
+[case testBatchFieldWithValidGetter]
+from olo import Model, Field, BatchField
+
+class BaseModel(Model):
+    pass
+
+class Person(BaseModel):
+    pass
+
+class User(BaseModel):
+    __table_name__ = 'users'
+    id = Field(int, primary_key=True)
+    name = Field(str, noneable=True)
+    person = BatchField(Person)
+
+    @person.getter
+    @classmethod
+    def get_persons(cls, users):
+        return None
+[out]
+
 [case testModelCreate]
 from olo import Model, Field
 
