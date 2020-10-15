@@ -7,23 +7,11 @@ sudo: required
 
 jobs:
   include:
-  - name: "run basic tests with python 3.5.1"
-    dist: trusty
-    python: 3.5.1
-    script: |
-      set -e
-      pytest
-  - name: "run test suite with python 3.6"
-    python: 3.6
-    script: |
-      set -e
-      pytest
   - name: "run test suite with python 3.7"
     python: 3.7
     script: |
       set -e
       pytest
-
 
 before_install: |
   # Upgrade pip, setuptools, and wheel
@@ -32,4 +20,5 @@ before_install: |
 install: |
   pip install -Ur external/mypy/test-requirements.txt
   pip install -U .
+  python2 -m pip install --user -U .
   export PYTHONPATH=`pwd`/external/mypy
