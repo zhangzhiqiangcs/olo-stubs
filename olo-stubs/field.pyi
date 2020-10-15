@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeVar, Type, Generic, Optional, Callable, Container, Any, overload, Tuple
+from typing import TypeVar, Type, Generic, Optional, Callable, Container, Any, overload, Tuple, List
 
 from .interfaces import SQLASTInterface
 from .olo_types import SQLValue as SQLValue
@@ -8,7 +8,9 @@ from .mixins.operations import BinaryOperationMixin, UnaryOperationMixin
 from .types.json import JSONLike
 
 T = TypeVar('T')
+U = TypeVar('U')
 F = TypeVar('F', bound='BaseField')
+BF = TypeVar('BF', bound='BatchField')
 
 
 class BaseField(Generic[T]):
@@ -57,6 +59,10 @@ class BaseField(Generic[T]):
     def parse(self, value: Any) -> T: ...
 
     def deparse(self, value: T) -> SQLValue: ...
+
+    def getter(self: F, func: Callable[[Any, T], T]) -> F: ...
+
+    def setter(self: F, func: Callable[[Any, T], T]) -> F: ...
 
     @overload
     def __get__(self: F, instance: None, owner: Any) -> F: ...
@@ -107,3 +113,23 @@ class JSONField(Field[JSONLike]):
 
 
 class DbField(BaseField): ...
+
+
+class BatchField(Generic[T]):
+    @overload
+    def __init__(self, type_: Type[T],
+                 default: Optional[T] = ...,
+                 name: Optional[str] = ...) -> None: ...
+
+    @overload
+    def __init__(self, type_: Callable[..., Type[T]],
+                 default: Optional[T] = ...,
+                 name: Optional[str] = ...) -> None: ...
+
+    def getter(self, func: Callable[[Type[U], List[U]], List[Optional[T]]]) -> Callable[[Type[U], List[U]], List[Optional[T]]]: ...
+
+    @overload
+    def __get__(self: BF, instance: None, owner: Any) -> BF: ...
+
+    @overload
+    def __get__(self, instance: object, owner: Any) -> Optional[T]: ...
